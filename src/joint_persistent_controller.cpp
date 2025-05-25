@@ -1,4 +1,4 @@
-#include <serl_franka_controllers/cartesian_impedance_controller.h>
+#include <serl_franka_controllers/joint_persistent_controller.h>
 
 #include <cmath>
 #include <memory>
