@@ -161,15 +161,13 @@ class FrankaTestTrajectoryPublisher:
         print(f"RMS Err: [{', '.join([f'{x:6.3f}' for x in self.rms_errors])}]")
         print(f"Max Total Error: {np.max(np.abs(error)):.4f} rad ({np.degrees(np.max(np.abs(error))):.2f} deg)")
     
-    def plot_results(self):
+    def plot_results(self, axes):
         """Plot tracking results in real-time"""
         if not self.plotting_enabled or len(self.error_history) < 10:
             return
             
         try:
-            plt.ion()
-            fig, axes = plt.subplots(3, 1, figsize=(12, 10))
-            
+
             times = np.array(list(self.time_history)[-500:])  # Last 10 seconds
             if len(times) == 0:
                 return
@@ -279,8 +277,11 @@ class FrankaTestTrajectoryPublisher:
     
     def plot_loop(self):
         """Separate thread for plotting"""
+        plt.ion()
+        fig, axes = plt.subplots(3, 1, figsize=(12,10))
+
         while not rospy.is_shutdown() and self.plotting_enabled:
-            self.plot_results()
+            self.plot_results(axes)
             time.sleep(0.1)  # Update plot at 10Hz
     
     def print_final_statistics(self):
