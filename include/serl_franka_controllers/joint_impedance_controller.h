@@ -18,6 +18,8 @@
 #include <franka_hw/franka_model_interface.h>
 #include <franka_hw/trigger_rate.h>
 
+#include <sensor_msgs/JointState.h>
+
 namespace serl_franka_controllers {
 
 class JointImpedanceController : public controller_interface::MultiInterfaceController<

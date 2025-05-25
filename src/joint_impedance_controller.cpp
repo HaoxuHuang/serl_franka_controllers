@@ -121,7 +121,7 @@ bool JointImpedanceController::init(hardware_interface::RobotHW* robot_hw,
     }
   }
   torques_publisher_.init(node_handle, "torque_comparison", 1);
-  desired_joint_state_sub_ = node_handle.subscribe<sensor_msgs::JointState>(
+  desired_joint_state_sub_ = node_handle.subscribe(
     "/joint_states_desired", 1, &JointImpedanceController::desiredJointStateCallback, this);
 
   std::fill(dq_filtered_.begin(), dq_filtered_.end(), 0);
