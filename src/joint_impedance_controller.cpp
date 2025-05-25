@@ -131,6 +131,27 @@ bool JointImpedanceController::init(hardware_interface::RobotHW* robot_hw,
 
 void JointImpedanceController::starting(const ros::Time& /*time*/) {
   initial_pose_ = cartesian_pose_handle_->getRobotState().O_T_EE_d;
+
+  // get current joint postion and set as target
+  franka::RobotState robot_state = cartesian_pose_handle_->getRobotState();
+  
+  {
+    std::lock_guard<std::mutex> lock(desired_state_mutex_);
+    for (size_t i = 0; i < 7; ++i) {
+      q_desired_[i] = robot_state.q[i];  // set current position as target
+      last_q_desired_[i] = robot_state.q[i];
+      dq_desired_filtered_[i] = 0.0;     // initialize velocity as 0
+    }
+    has_last_q_desired_ = true;
+  }
+  
+  // initialize last torque
+  std::array<double, 7> gravity = model_handle_->getGravity();
+  for (size_t i = 0; i < 7; ++i) {
+    last_tau_d_[i] = gravity[i];  // initialize as gravity compensate
+  }
+  
+  last_desired_msg_time_ = ros::Time::now();
 }
 
 void JointImpedanceController::update(const ros::Time& /*time*/,

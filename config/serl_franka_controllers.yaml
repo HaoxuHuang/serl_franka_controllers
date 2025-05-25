@@ -48,7 +48,7 @@ joint_persistent_controller:
 
 
 joint_impedance_controller:
-    type: serl_franka_controllers/JointImpedanceExampleController
+    type: serl_franka_controllers/JointImpedanceController
     arm_id: panda
     joint_names:
         - panda_joint1
