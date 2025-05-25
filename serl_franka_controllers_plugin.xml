@@ -9,4 +9,9 @@
       A controller that renders a spring damper system in cartesian space. Compliance parameters and the equilibrium pose can be modified online with dynamic reconfigure and an interactive marker respectively.
     </description>
   </class>
+  <class name="serl_franka_controllers/JointPersistentController" type="serl_franka_controllers::JointPersistentController" base_class_type="controller_interface::ControllerBase">
+    <description>
+      A controller that persistently trackes target jonit positions.
+    </description>
+  </class>
 </library>
