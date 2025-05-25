@@ -14,4 +14,9 @@
       A controller that persistently trackes target jonit positions.
     </description>
   </class>
+  <class name="serl_franka_controllers/JointImpedanceController" type="serl_franka_controllers::JointImpedanceController" base_class_type="controller_interface::ControllerBase">
+    <description>
+      A controller that use impedance control to track target jonit positions.
+    </description>
+  </class>
 </library>
