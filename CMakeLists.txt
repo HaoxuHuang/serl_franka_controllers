@@ -55,6 +55,7 @@ catkin_package(
 add_library(serl_franka_controllers
   src/joint_position_controller.cpp
   src/cartesian_impedance_controller.cpp
+  src/joint_persistent_controller.cpp
   )
 
 add_dependencies(serl_franka_controllers
