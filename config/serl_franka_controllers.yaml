@@ -20,3 +20,28 @@ cartesian_impedance_controller:
         - panda_joint5
         - panda_joint6
         - panda_joint7
+
+joint_persistent_controller:
+  type: serl_franka_controllers/JointPersistentController
+  
+  # Timing parameters
+  interpolation_time: 0.02      # Minimum interpolation time (50ms for high dynamics)
+  
+  # Dynamic limits
+  max_velocity: 2.5             # Maximum joint velocity (rad/s)
+  max_acceleration: 15.0        # Maximum joint acceleration (rad/s^2)
+  
+  # Control parameters
+  use_smooth_interpolation: true    # Use S-curve interpolation
+  position_tolerance: 0.002         # Position tolerance (rad)
+  velocity_filter_gain: 0.3         # Velocity filter gain (0-1)
+  
+  # Joint names (automatically set in code)
+  joints:
+    - panda_joint1
+    - panda_joint2
+    - panda_joint3
+    - panda_joint4
+    - panda_joint5
+    - panda_joint6
+    - panda_joint7
