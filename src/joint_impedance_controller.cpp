@@ -15,6 +15,7 @@ namespace serl_franka_controllers {
 
 bool JointImpedanceController::init(hardware_interface::RobotHW* robot_hw,
                                            ros::NodeHandle& node_handle) {
+  publisher_franka_jacobian_.init(node_handle, "franka_jacobian", 1);
   std::string arm_id;
   if (!node_handle.getParam("arm_id", arm_id)) {
     ROS_ERROR("JointImpedanceController: Could not read parameter arm_id");
@@ -89,19 +90,31 @@ bool JointImpedanceController::init(hardware_interface::RobotHW* robot_hw,
     return false;
   }
 
-  auto* cartesian_pose_interface = robot_hw->get<franka_hw::FrankaPoseCartesianInterface>();
-  if (cartesian_pose_interface == nullptr) {
-    ROS_ERROR_STREAM(
-        "JointImpedanceController: Error getting cartesian pose interface from hardware");
+  // auto* cartesian_pose_interface = robot_hw->get<franka_hw::FrankaPoseCartesianInterface>();
+  // if (cartesian_pose_interface == nullptr) {
+  //   ROS_ERROR_STREAM(
+  //       "JointImpedanceController: Error getting cartesian pose interface from hardware");
+  //   return false;
+  // }
+  // try {
+  //   cartesian_pose_handle_ = std::make_unique<franka_hw::FrankaCartesianPoseHandle>(
+  //       cartesian_pose_interface->getHandle(arm_id + "_robot"));
+  // } catch (hardware_interface::HardwareInterfaceException& ex) {
+  //   ROS_ERROR_STREAM(
+  //       "JointImpedanceController: Exception getting cartesian pose handle from interface: "
+  //       << ex.what());
+  //   return false;
+  // }
+  auto* state_interface = robot_hw->get<franka_hw::FrankaStateInterface>();
+  if (state_interface == nullptr) {
+    ROS_ERROR_STREAM("JointImpedanceController: Could not get state interface from hardware");
     return false;
   }
   try {
-    cartesian_pose_handle_ = std::make_unique<franka_hw::FrankaCartesianPoseHandle>(
-        cartesian_pose_interface->getHandle(arm_id + "_robot"));
-  } catch (hardware_interface::HardwareInterfaceException& ex) {
-    ROS_ERROR_STREAM(
-        "JointImpedanceController: Exception getting cartesian pose handle from interface: "
-        << ex.what());
+    state_handle_ = std::make_unique<franka_hw::FrankaStateHandle>(
+        state_interface->getHandle(arm_id + "_robot"));
+  } catch (const hardware_interface::HardwareInterfaceException& ex) {
+    ROS_ERROR_STREAM("JointImpedanceController: Exception getting state handle: " << ex.what());
     return false;
   }
 
@@ -130,10 +143,11 @@ bool JointImpedanceController::init(hardware_interface::RobotHW* robot_hw,
 }
 
 void JointImpedanceController::starting(const ros::Time& /*time*/) {
-  initial_pose_ = cartesian_pose_handle_->getRobotState().O_T_EE_d;
+  // initial_pose_ = cartesian_pose_handle_->getRobotState().O_T_EE_d;
 
-  // get current joint postion and set as target
-  franka::RobotState robot_state = cartesian_pose_handle_->getRobotState();
+  // // get current joint postion and set as target
+  // franka::RobotState robot_state = cartesian_pose_handle_->getRobotState();
+  franka::RobotState robot_state = state_handle_->getRobotState();
   
   {
     std::lock_guard<std::mutex> lock(desired_state_mutex_);
@@ -174,9 +188,12 @@ void JointImpedanceController::update(const ros::Time& /*time*/,
 //   pose_desired[14] += delta_z;
 //   cartesian_pose_handle_->setCommand(pose_desired);
 
-  franka::RobotState robot_state = cartesian_pose_handle_->getRobotState();
+  // franka::RobotState robot_state = cartesian_pose_handle_->getRobotState();
+  franka::RobotState robot_state = state_handle_->getRobotState();
   std::array<double, 7> coriolis = model_handle_->getCoriolis();
   std::array<double, 7> gravity = model_handle_->getGravity();
+  jacobian_array = model_handle_->getZeroJacobian(franka::Frame::kEndEffector);
+  publishZeroJacobian(time);
 
   double alpha = 0.99;
   for (size_t i = 0; i < 7; i++) {
@@ -221,6 +238,15 @@ void JointImpedanceController::update(const ros::Time& /*time*/,
   for (size_t i = 0; i < 7; ++i) {
     last_tau_d_[i] = tau_d_saturated[i] + gravity[i];
   }
+}
+
+void CartesianImpedanceController::publishZeroJacobian(const ros::Time& time) {
+  if (publisher_franka_jacobian_.trylock()) {
+      for (size_t i = 0; i < jacobian_array.size(); i++) {
+        publisher_franka_jacobian_.msg_.zero_jacobian[i] = jacobian_array[i];
+      }
+      publisher_franka_jacobian_.unlockAndPublish();
+    }
 }
 
 std::array<double, 7> JointImpedanceController::saturateTorqueRate(

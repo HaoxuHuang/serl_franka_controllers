@@ -14,18 +14,20 @@
 #include <ros/time.h>
 
 #include <serl_franka_controllers/JointTorqueComparison.h>
-#include <franka_hw/franka_cartesian_command_interface.h>
+// #include <franka_hw/franka_cartesian_command_interface.h>
+#include <franka_hw/franka_state_interface.h>
 #include <franka_hw/franka_model_interface.h>
 #include <franka_hw/trigger_rate.h>
 
 #include <sensor_msgs/JointState.h>
+#include <serl_franka_controllers/ZeroJacobian.h>
 
 namespace serl_franka_controllers {
 
 class JointImpedanceController : public controller_interface::MultiInterfaceController<
                                             franka_hw::FrankaModelInterface,
                                             hardware_interface::EffortJointInterface,
-                                            franka_hw::FrankaPoseCartesianInterface> {
+                                            franka_hw::FrankaStateInterface> {
  public:
   bool init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& node_handle) override;
   void starting(const ros::Time&) override;
@@ -37,9 +39,11 @@ class JointImpedanceController : public controller_interface::MultiInterfaceCont
       const std::array<double, 7>& tau_d_calculated,
       const std::array<double, 7>& tau_J_d);  // NOLINT (readability-identifier-naming)
 
-  std::unique_ptr<franka_hw::FrankaCartesianPoseHandle> cartesian_pose_handle_;
+  // std::unique_ptr<franka_hw::FrankaCartesianPoseHandle> cartesian_pose_handle_;
+  std::unique_ptr<franka_hw::FrankaStateHandle> state_handle_;
   std::unique_ptr<franka_hw::FrankaModelHandle> model_handle_;
   std::vector<hardware_interface::JointHandle> joint_handles_;
+  std::array<double, 42> jacobian_array;
 
   static constexpr double kDeltaTauMax{1.0};
   double radius_{0.1};
@@ -70,7 +74,10 @@ class JointImpedanceController : public controller_interface::MultiInterfaceCont
   ros::Time last_desired_msg_time_;
   std::array<double, 7> last_q_desired_{};
   bool has_last_q_desired_ = false;
-
+  // Zero Jacobian publisher
+  void publishZeroJacobian(const ros::Time& time);
+  realtime_tools::RealtimePublisher<serl_franka_controllers::ZeroJacobian> publisher_franka_jacobian_;
+  
 };
 
 }  // namespace serl_franka_controllers
